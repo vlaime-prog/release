@@ -1,0 +1,28 @@
+1. Diagrama de Contexto (Nivel 1)
+Archivo: docs/diagrams/c4_context.mmd
+Este diagrama muestra a la Plataforma FTGO como un sistema centralizado interactuando con los actores clave y los sistemas externos definidos en el brief
+.
+C4Context
+    title FTGO – Diagrama de Contexto (Nivel 1)
+
+    Person(consumer, "Consumidor", "Usuario final que ordena comida y rastrea su pedido.")
+    Person(restaurant, "Restaurante", "Negocio asociado que gestiona menús y prepara pedidos.")
+    Person(courier, "Courier", "Repartidor que entrega los pedidos de forma independiente.")
+    Person(staff, "Empleado FTGO", "Personal de soporte y operaciones (Back office).")
+
+    System(ftgo_system, "Plataforma FTGO", "Marketplace de delivery que conecta consumidores, restaurantes y couriers.")
+
+    System_Ext(stripe, "Stripe", "Pasarela de pago externa para cobros seguros (PCI-DSS).")
+    System_Ext(gmaps, "Google Maps", "Servicio externo para geolocalización y optimización de rutas.")
+    System_Ext(notifications, "SendGrid/Twilio", "Servicios externos para envío de Email y SMS.")
+    System_Ext(legacy, "Sistema Legacy", "Monolito Java (WAR) original en proceso de migración (Strangler Fig).")
+
+    Rel(consumer, ftgo_system, "Realiza pedidos y rastrea entregas", "HTTPS")
+    Rel(restaurant, ftgo_system, "Gestiona menús y acepta tickets de cocina", "HTTPS")
+    Rel(courier, ftgo_system, "Recibe asignaciones y reporta ubicación", "HTTPS")
+    Rel(staff, ftgo_system, "Visualiza reportes y gestiona incidentes", "HTTPS")
+
+    Rel(ftgo_system, stripe, "Procesa cargos a tarjetas de crédito", "JSON/HTTPS")
+    Rel(ftgo_system, gmaps, "Obtiene coordenadas y tiempos de viaje", "JSON/HTTPS")
+    Rel(ftgo_system, notifications, "Envía confirmaciones y alertas", "SMTP/HTTPS")
+    Rel(ftgo_system, legacy, "Sincroniza datos históricos y transaccionales", "JSON/HTTPS")
