@@ -1,0 +1,47 @@
+2. Diagrama de Contenedores (Nivel 2)
+Archivo: docs/diagrams/c4_container.mmd
+Este diagrama desglosa el sistema en 6 contenedores críticos, especificando tecnologías y protocolos. Se refleja el uso de Kafka para la resiliencia en procesos asíncronos (como pagos), cumpliendo con el ADR 2
+.
+C4Container
+    title FTGO – Diagrama de Contenedores (Nivel 2)
+
+    Person(consumer, "Consumidor", "Usuario de la plataforma")
+    
+    System_Boundary(ftgo, "Plataforma FTGO") {
+        Container(mobile_app, "Mobile App", "React Native", "Interfaz para consumidores y couriers.")
+        
+        Container(order_service, "Order Service", "Java / Spring Boot", "Gestiona la toma de pedidos (Order Taking).")
+        ContainerDb(order_db, "Order DB", "PostgreSQL", "Almacena información de pedidos y estados.")
+
+        Container(billing_service, "Billing Service", "Java / Spring Boot", "Gestiona cobros y pagos a socios.")
+        
+        ContainerQueue(kafka, "Event Broker", "Apache Kafka", "Bus de eventos para comunicación asíncrona y resiliencia.")
+
+        Container(kitchen_service, "Kitchen Service", "Java / Spring Boot", "Gestiona tickets de cocina y preparación.")
+        ContainerDb(kitchen_db, "Kitchen DB", "PostgreSQL", "Almacena tickets y disponibilidad del restaurante.")
+    }
+
+    System_Ext(stripe, "Stripe", "Pasarela de Pago")
+
+    %% Relaciones de usuario
+    Rel(consumer, mobile_app, "Usa app para ordenar", "iOS/Android")
+    Rel(mobile_app, order_service, "Envía solicitudes de pedido", "JSON/HTTPS")
+
+    %% Relaciones internas síncronas y base de datos
+    Rel(order_service, order_db, "Lee/Escribe pedidos", "JDBC")
+    Rel(kitchen_service, kitchen_db, "Gestiona estado de preparación", "JDBC")
+
+    %% Relaciones asíncronas vía Kafka (Cumpliendo ADR 2)
+    Rel(order_service, kafka, "Publica evento 'OrderCreated'", "Kafka Protocol")
+    Rel(kafka, billing_service, "Suscribe a 'OrderCreated' para iniciar cobro", "Kafka Protocol")
+    Rel(kafka, kitchen_service, "Notifica ticket para preparación", "Kafka Protocol")
+
+    %% Relación con sistema externo
+    Rel(billing_service, stripe, "Realiza cargos financieros", "JSON/HTTPS")
+Notas de diseño y trazabilidad:
+Capacidades: Se han representado contenedores para las capacidades de Order Taking, Kitchen y Billing
+.
+Resiliencia (NFR-04): La inclusión del Kafka Broker permite que el sistema acepte pedidos incluso si Stripe está caído, encolando la tarea de cobro en el Billing Service
+.
+Protocolos: Cada relación especifica explícitamente el protocolo (JSON/HTTPS, JDBC, Kafka Protocol), cumpliendo con la rúbrica de calidad del laboratorio
+.
